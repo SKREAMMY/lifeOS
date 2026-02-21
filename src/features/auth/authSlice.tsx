@@ -1,38 +1,27 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
-type User = {
+interface User {
   id: string;
   name: string;
   email: string;
-};
-
-type AuthState = {
-  token: string | null;
-  user: User | null;
-};
-
-const STORAGE_KEY = "lifeos_auth";
-
-function loadAuth(): AuthState {
-  console.log("inside load auth");
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return { token: null, user: null };
-    }
-    const parsed = JSON.parse(raw) as AuthState;
-    return {
-      token: parsed.token ?? null,
-      user: parsed.user ?? null,
-    };
-  } catch {
-    return { token: null, user: null };
-  }
 }
 
-const initialState: AuthState = loadAuth();
-console.log("initial state becomes ", initialState);
+interface AuthState {
+  token: string | null;
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+}
+
+const initialState: AuthState = {
+  token: localStorage.getItem("token"),
+  user: localStorage.getItem("user")
+    ? JSON.parse(localStorage.getItem("user") as string)
+    : null,
+  loading: false,
+  error: null,
+};
 
 const authSlice = createSlice({
   name: "auth",
@@ -44,11 +33,18 @@ const authSlice = createSlice({
     ) => {
       state.token = action.payload.token;
       state.user = action.payload.user;
-      localStorage.setItem("STORAGE_KEY", JSON.stringify(state));
+      state.loading = false;
+      state.error = null;
+      localStorage.setItem("token", action.payload.token);
+      localStorage.setItem("user", JSON.stringify(action.payload.user));
     },
     logout: (state) => {
       state.token = null;
       state.user = null;
+      state.loading = false;
+      state.error = null;
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
   },
 });

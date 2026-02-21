@@ -30,10 +30,7 @@ function LoginPage() {
       }}
     >
       <h1 style={{ marginTop: 0 }}>Login</h1>
-      <p style={{ opacity: 0.8 }}>
-        This is a fake login for Step 1. We’ll wire real API + React Query
-        later.
-      </p>
+      <p style={{ opacity: 0.8 }}>This is a fake login</p>
       <button onClick={handleLogin}>Login</button>
     </div>
   );
