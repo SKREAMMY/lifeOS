@@ -83,3 +83,35 @@ export async function createTask(input: { title: string; status?: string }) {
 
   saveTasks([newTask, ...tasks]);
 }
+
+export async function updateTask(id:string,patch : Partial<Pick<Task,"title" | "status">>): Promise<Task> {
+    seedTaskIfEmpty();
+    await sleep(NETWORK_DELAY);
+
+    const tasks = loadTasks();
+    const idx = tasks.findIndex((t)=>t.id === id);
+    if(idx === -1) throw new Error("task not found");
+
+    const updatedTask: Task = {
+        ...tasks[idx],
+        ...patch,
+        title: patch.title ? patch.title.trim() : tasks[idx].title,
+        updatedAt: nowIso(),
+    }
+
+    tasks[idx] = updatedTask;
+    saveTasks(tasks);
+    return updatedTask;
+
+}
+
+export async function deleteTask(id: string): Promise<{id: string}>{
+    seedTaskIfEmpty();
+    await sleep(NETWORK_DELAY);
+
+    const tasks = loadTasks();
+    saveTasks(tasks.filter((t)=> t.id !== id));
+    return {id};
+}
+
+
