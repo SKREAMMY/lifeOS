@@ -3,6 +3,12 @@ const NETWORK_DELAY = 250;
 
 export type TaskStatus = "todo" | "doing" | "done";
 
+export type TasksQuery = {
+    status: TaskStatus | "all",
+    search: string,
+    sort: "newest" | "oldest"
+}
+
 export type Task = {
   id: string;
   title: string;
@@ -67,6 +73,35 @@ function seedTaskIfEmpty() {
   saveTasks(seed);
 }
 
+function applyQuery(tasks: Task[], q: TasksQuery): Task[] {
+  let result = [...tasks];
+
+  if (q.status !== "all") {
+    result = result.filter((t) => t.status === q.status);
+  }
+
+  if (q.search.trim()) {
+    const s = q.search.trim().toLowerCase();
+    result = result.filter((t) => t.title.toLowerCase().includes(s));
+  }
+
+  result.sort((a,b)=>{
+    const av = new Date(a.createdAt).getTime();
+    const bv = new Date(b.createdAt).getTime();
+    return q.sort === "newest" ? bv-av : av-bv;
+  });
+
+  return result;
+}
+
+export async function getTasks(q: TasksQuery): Promise<Task[]> {
+  seedTaskIfEmpty();
+  await sleep(NETWORK_DELAY);
+
+  const tasks = loadTasks();
+  return applyQuery(tasks, q);
+}
+
 export async function createTask(input: { title: string; status?: string }) {
   seedTaskIfEmpty();
   // mocking an API call here by adding a delay
@@ -84,34 +119,34 @@ export async function createTask(input: { title: string; status?: string }) {
   saveTasks([newTask, ...tasks]);
 }
 
-export async function updateTask(id:string,patch : Partial<Pick<Task,"title" | "status">>): Promise<Task> {
-    seedTaskIfEmpty();
-    await sleep(NETWORK_DELAY);
+export async function updateTask(
+  id: string,
+  patch: Partial<Pick<Task, "title" | "status">>,
+): Promise<Task> {
+  seedTaskIfEmpty();
+  await sleep(NETWORK_DELAY);
 
-    const tasks = loadTasks();
-    const idx = tasks.findIndex((t)=>t.id === id);
-    if(idx === -1) throw new Error("task not found");
+  const tasks = loadTasks();
+  const idx = tasks.findIndex((t) => t.id === id);
+  if (idx === -1) throw new Error("task not found");
 
-    const updatedTask: Task = {
-        ...tasks[idx],
-        ...patch,
-        title: patch.title ? patch.title.trim() : tasks[idx].title,
-        updatedAt: nowIso(),
-    }
+  const updatedTask: Task = {
+    ...tasks[idx],
+    ...patch,
+    title: patch.title ? patch.title.trim() : tasks[idx].title,
+    updatedAt: nowIso(),
+  };
 
-    tasks[idx] = updatedTask;
-    saveTasks(tasks);
-    return updatedTask;
-
+  tasks[idx] = updatedTask;
+  saveTasks(tasks);
+  return updatedTask;
 }
 
-export async function deleteTask(id: string): Promise<{id: string}>{
-    seedTaskIfEmpty();
-    await sleep(NETWORK_DELAY);
+export async function deleteTask(id: string): Promise<{ id: string }> {
+  seedTaskIfEmpty();
+  await sleep(NETWORK_DELAY);
 
-    const tasks = loadTasks();
-    saveTasks(tasks.filter((t)=> t.id !== id));
-    return {id};
+  const tasks = loadTasks();
+  saveTasks(tasks.filter((t) => t.id !== id));
+  return { id };
 }
-
-
