@@ -1,5 +1,5 @@
 const STORAGE_KEY = "lifeos_tasks";
-const NETWORK_DELAY = 250;
+const NETWORK_DELAY = 1000;
 
 export type TaskStatus = "todo" | "doing" | "done";
 
@@ -103,6 +103,8 @@ export async function getTasks(q: TasksQuery): Promise<Task[]> {
 }
 
 export async function createTask(input: { title: string; status?: string }) {
+
+  console.log("creating new task");
   seedTaskIfEmpty();
   // mocking an API call here by adding a delay
   await sleep(NETWORK_DELAY);
