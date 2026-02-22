@@ -1,13 +1,13 @@
 const STORAGE_KEY = "lifeos_tasks";
-const NETWORK_DELAY = 1000;
+const NETWORK_DELAY = 250;
 
 export type TaskStatus = "todo" | "doing" | "done";
 
 export type TasksQuery = {
-    status: TaskStatus | "all",
-    search: string,
-    sort: "newest" | "oldest"
-}
+  status: TaskStatus | "all";
+  search: string;
+  sort: "newest" | "oldest";
+};
 
 export type Task = {
   id: string;
@@ -85,10 +85,10 @@ function applyQuery(tasks: Task[], q: TasksQuery): Task[] {
     result = result.filter((t) => t.title.toLowerCase().includes(s));
   }
 
-  result.sort((a,b)=>{
+  result.sort((a, b) => {
     const av = new Date(a.createdAt).getTime();
     const bv = new Date(b.createdAt).getTime();
-    return q.sort === "newest" ? bv-av : av-bv;
+    return q.sort === "newest" ? bv - av : av - bv;
   });
 
   return result;
@@ -103,7 +103,6 @@ export async function getTasks(q: TasksQuery): Promise<Task[]> {
 }
 
 export async function createTask(input: { title: string; status?: string }) {
-
   console.log("creating new task");
   seedTaskIfEmpty();
   // mocking an API call here by adding a delay
@@ -123,7 +122,7 @@ export async function createTask(input: { title: string; status?: string }) {
 
 export async function updateTask(
   id: string,
-  patch: Partial<Pick<Task, "title" | "status">>,
+  patch: Partial<Pick<Task, "title" | "status">>
 ): Promise<Task> {
   seedTaskIfEmpty();
   await sleep(NETWORK_DELAY);
