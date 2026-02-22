@@ -1,12 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createTask, getTasks } from "./tasks.api";
+import { createTask, deleteTask, getTasks, updateTask } from "./tasks.api";
 import type { TasksQuery, Task } from "./tasks.api";
 
 const keys = {
   tasks: (q: TasksQuery) => ["tasks", q] as const,
 };
-
-// console.log("keys are ",kesys);
 
 export function useTasksQuery(q: TasksQuery) {
   console.log("q is use task query is ", q);
@@ -25,7 +23,7 @@ export function useCreateTaskMutation(q: TasksQuery) {
       createTask(input),
     onMutate: async (input) => {
       await qc.cancelQueries({ queryKey: keys.tasks(q) });
-      const prev = (qc.getQueryData(keys.tasks(q)) ?? []) as Array<any>;
+      const prev = (qc.getQueryData(keys.tasks(q)) ?? []) as Task[];
       console.log("prev is ", prev);
       const temp = {
         id: `temp-${Date.now()}`,
@@ -53,7 +51,73 @@ export function useCreateTaskMutation(q: TasksQuery) {
     },
 
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: keys.tasks(q) });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useUpdateTaskMutation(q: TasksQuery) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      id: string;
+      patch: Partial<Pick<Task, "title" | "status">>;
+    }) => updateTask(input.id, input.patch),
+
+    onMutate: async ({ id, patch }) => {
+      await qc.cancelQueries({ queryKey: keys.tasks(q) });
+
+      const prev = qc.getQueryData<Task[]>(keys.tasks(q)) ?? [];
+      console.log("prev in update query", prev);
+
+      qc.setQueryData<Task[]>(
+        keys.tasks(q),
+        prev.map((d) =>
+          d.id === id
+            ? { ...d, ...patch, updatedAt: new Date().toISOString() }
+            : d
+        )
+      );
+
+      return { prev };
+    },
+
+    onError: (_err, _input, ctx) => {
+      if (!ctx) return;
+
+      qc.setQueryData(keys.tasks(q), ctx.prev);
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useDeleteTaskMutation(q: TasksQuery) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteTask(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: keys.tasks(q) });
+
+      const prev = qc.getQueryData<Task[]>(keys.tasks(q)) ?? [];
+      qc.setQueryData(
+        keys.tasks(q),
+        prev.filter((t) => t.id !== id)
+      );
+
+      return { prev };
+    },
+    onError: (_err, _input, ctx) => {
+      if (!ctx) return;
+
+      qc.setQueryData(keys.tasks(q), ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
